@@ -1,7 +1,13 @@
 if defined?(DatePicker)
   DatePicker::NIL_DATE_VIEW = ''
   DatePicker::DATE_FORMAT = "%d-%B-%Y"
-  DatePicker::DATETIME_FORMAT = "%d-%B-%Y-%H:%M"
+  DatePicker::DATETIME_FORMAT = "%d-%B-%Y %H:%M"
   DatePicker::DATE_STRING_TOOLTIP = "Click to delete"
-  DatePicker::ALLOW_ONLY_ONE_POPUP_CALENDAR = true
+  DatePicker::ALLOW_ONLY_ONE_POPUP_CALENDAR = false
+  DatePicker::MINUTE_STEP = 5
+  
+  DatePicker::DEFAULT_ON_CHANGED_JS_CALLBACK =%!function(date, calendar){
+    new Effect.Highlight(calendar.dateField, {queue: 'end' })
+  } !
+  DatePicker::DEFAULT_ON_HIDE_JS_CALLBACK = DatePicker::DEFAULT_ON_CHANGED_JS_CALLBACK
 end
