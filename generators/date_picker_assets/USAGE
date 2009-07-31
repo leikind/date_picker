@@ -1,0 +1,6 @@
+Description:
+	Copies
+	 calendarview.js to  public/javascripts/
+	 calendarview.css to  public/stylesheets/
+	 calendar_view_month.png to  public/images/
+	 date_picker_config.rb to config/initializer/
