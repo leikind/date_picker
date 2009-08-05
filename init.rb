@@ -1,5 +1,3 @@
-# Include hook code here
-
 ActionView::Base.class_eval do
 
   # Rails simple tag style view helpers  
@@ -10,7 +8,6 @@ ActionView::Base.class_eval do
   alias_method :original_date_select, :date_select
   alias_method :original_datetime_select, :datetime_select
 
-  
-  include DatePicker 
+  include DatePicker
   
 end
