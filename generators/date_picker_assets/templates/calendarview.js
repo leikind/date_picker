@@ -69,6 +69,7 @@ var Calendar = Class.create({
 
     if (parentElement){
       this.parentElement = $(parentElement);
+      this.parentElement._calendar = this;
     }else{
       this.parentElement = null;
     }
@@ -95,7 +96,8 @@ var Calendar = Class.create({
 
     if (this.isPopup) { //Popup Calendars
       var triggerElement = $(triggerElement || dateField);
-
+      triggerElement._calendar = this;
+      
       triggerElement.onclick = function() {
         this.showAtElement(triggerElement);
       }.bind(this);
@@ -289,7 +291,7 @@ var Calendar = Class.create({
     else if (date.getFullYear() > this.maxYear)
       date.__setFullYear(this.maxYear)
 
-    this.date = new Date(date)
+    this.date = new Date(date);
 
     // Calculate the first day to display (including the previous month)
     date.setDate(1)

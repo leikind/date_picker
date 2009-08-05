@@ -9,7 +9,7 @@ module DatePicker
 
       date_picker = %|<span class="date_picker">|
       date_picker << ' '
-      date_picker << icon('calendar_view_month', :id => popup_trigger_icon_id, :style => 'cursor: pointer', :title => 'Date selector')
+      date_picker << image_tag('calendar_view_month.png', :id => popup_trigger_icon_id, :style => 'cursor: pointer', :title => 'Date selector')
 
       date_picker << link_to_function(
         content_tag(:span, date_string, :id => date_view_id),
