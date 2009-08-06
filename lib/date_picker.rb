@@ -1,19 +1,26 @@
 module DatePicker
 
-    def select_date_datetime_common(options, date_string)
+    def select_date_datetime_common(options, initial_date, with_time, date_format)
+      
+      date_string = initial_date.nil? ? NIL_DATE_VIEW : initial_date.strftime(date_format)
+      
       name = options[:prefix]
 
       hidden_input_field_id = options[:id] || name.gsub(/\]$/,'').gsub(/[\[\]]+/,'_')
       popup_trigger_icon_id = hidden_input_field_id + '_trigger'
       date_view_id = hidden_input_field_id + '_date_view'
+      prompt_id = hidden_input_field_id + '_date_prompt'
 
       date_picker = %|<span class="date_picker">|
       date_picker << ' '
-      date_picker << image_tag('calendar_view_month.png', :id => popup_trigger_icon_id, :style => 'cursor: pointer', :title => 'Date selector')
-
+      date_picker << %|<span id="#{popup_trigger_icon_id}" class="trigger">|
+      date_picker << image_tag('calendar_view_month.png', :title => 'Date selector')
+      date_picker << %|<span class="prompt" id="#{prompt_id}">#{DatePicker::NIL_DATE_PROMPT}</span>|
+      date_picker << %|</span>|
+      
       date_picker << link_to_function(
         content_tag(:span, date_string, :id => date_view_id),
-        %! $('#{date_view_id}').update('#{NIL_DATE_VIEW}'); $('#{hidden_input_field_id}').value = ''; !,
+        %! $('#{date_view_id}').update('#{NIL_DATE_VIEW}'); $('#{hidden_input_field_id}').value = ''; $('#{prompt_id}').show(); !,
         :class => 'date_label',
         :title => DATE_STRING_TOOLTIP)
 
@@ -21,10 +28,15 @@ module DatePicker
       date_picker << hidden_field_tag(name, date_string, :class => 'text-input', :id => hidden_input_field_id)
       date_picker << '</span>'
 
-      return date_picker,  popup_trigger_icon_id, hidden_input_field_id, date_view_id
+      date_picker << calendar_constructor(
+        popup_trigger_icon_id, hidden_input_field_id, date_format, date_view_id, 
+        with_time.to_s, options[:on_hide], options[:on_changed], prompt_id, initial_date)
+
+      return date_picker
     end
 
-    def calendar_constructor(popup_trigger_icon_id, hidden_input_field_id, date_format, date_view_id, with_time, on_hide, on_changed)
+    def calendar_constructor(popup_trigger_icon_id, hidden_input_field_id, date_format, date_view_id, with_time, 
+                            on_hide, on_changed, prompt_id, initial_date)
       js =  %|<script type="text/javascript">\n|
       js << %|  document.observe('dom:loaded', function(){\n|
       js << %|    new Calendar({\n|
@@ -34,10 +46,15 @@ module DatePicker
       js << %|      extraOutputDateFields : $A([#{hidden_input_field_id}]),\n |
       js << %|      hideOnClickElsewhere : #{ALLOW_ONLY_ONE_POPUP_CALENDAR},\n |
       js << %|      minuteStep : #{MINUTE_STEP},\n |
-      js << %|      onHideCallback : #{on_hide},\n | unless on_hide.blank?
-      js << %|      onDateChangedCallback : #{on_changed},\n | unless on_changed.blank?
+      js << %|      onHideCallback : function(date, calendar){ #{on_hide} },\n | 
+      js << %|      onDateChangedCallback : function(date, calendar){ $("#{prompt_id}").hide(); #{on_changed} },\n | 
       js << %|      withTime : #{with_time}\n|
       js << %|    });\n|
+      
+      unless initial_date.nil?
+        js << %|  $("#{prompt_id}").hide(); \n|
+      end
+      
       js << %|  });\n|
       js << %|</script>\n|
 
@@ -58,24 +75,12 @@ module DatePicker
     # Rails simple tag style view helpers
     def select_date(initial_date, opts = {}, html_opts = {})
       options = opt_process(opts)
-      date_format = DATE_FORMAT
-      date_string = initial_date.nil? ? NIL_DATE_VIEW : initial_date.strftime(date_format)
-
-      html, popup_trigger_icon_id, hidden_input_field_id, date_view_id = select_date_datetime_common(options, date_string)
-
-      html + calendar_constructor(
-        popup_trigger_icon_id, hidden_input_field_id, date_format, date_view_id, 'false', options[:on_hide], options[:on_changed])
+      select_date_datetime_common(options, initial_date, false, DATE_FORMAT)
     end
 
     def select_datetime(initial_date, opts = {}, html_opts = {})
       options = opt_process(opts)
-      date_format = DATETIME_FORMAT
-      date_string = initial_date.nil? ? NIL_DATE_VIEW : initial_date.strftime(DATETIME_FORMAT)
-
-      html, popup_trigger_icon_id, hidden_input_field_id, date_view_id = select_date_datetime_common(options, date_string)
-
-      html + calendar_constructor(
-        popup_trigger_icon_id, hidden_input_field_id, date_format, date_view_id, 'true', options[:on_hide], options[:on_changed])
+      select_date_datetime_common(options, initial_date, true, DATETIME_FORMAT)
     end
 
 
