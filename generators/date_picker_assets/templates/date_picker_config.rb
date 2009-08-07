@@ -1,5 +1,6 @@
 if defined?(DatePicker)
   DatePicker::NIL_DATE_VIEW = ''
+  DatePicker::NIL_DATE_PROMPT = ''
   # DatePicker::DATE_FORMAT = "%d-%B-%Y"
   # DatePicker::DATETIME_FORMAT = "%d-%B-%Y-%H:%M"
   
@@ -11,8 +12,6 @@ if defined?(DatePicker)
   DatePicker::ALLOW_ONLY_ONE_POPUP_CALENDAR = false
   DatePicker::MINUTE_STEP = 5
   
-  DatePicker::DEFAULT_ON_CHANGED_JS_CALLBACK =%!function(date, calendar){
-    new Effect.Highlight(calendar.dateField, {queue: 'end' })
-  } !
+  DatePicker::DEFAULT_ON_CHANGED_JS_CALLBACK =%!  new Effect.Highlight(calendar.dateField, {queue: 'end' })  !
   DatePicker::DEFAULT_ON_HIDE_JS_CALLBACK = DatePicker::DEFAULT_ON_CHANGED_JS_CALLBACK
 end
