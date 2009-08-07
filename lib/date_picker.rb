@@ -31,7 +31,7 @@ module DatePicker
       js << %|      triggerElement : "#{popup_trigger_icon_id}",\n|
       js << %|      dateField : "#{date_view_id}",\n|
       js << %|      dateFormat : "#{date_format}",\n|
-      js << %|      extraOutputDateFields : $A([#{hidden_input_field_id}]),\n |
+      js << %|      extraOutputDateFields : $A(["#{hidden_input_field_id}"]),\n |
       js << %|      hideOnClickElsewhere : #{ALLOW_ONLY_ONE_POPUP_CALENDAR},\n |
       js << %|      minuteStep : #{MINUTE_STEP},\n |
       js << %|      onHideCallback : #{on_hide},\n | unless on_hide.blank?
