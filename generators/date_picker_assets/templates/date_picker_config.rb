@@ -6,6 +6,9 @@ if defined?(DatePicker)
   
   DatePicker::DATE_FORMAT = "%d %B %Y"
   DatePicker::DATETIME_FORMAT = "%d %B %Y %H:%M"
+
+  DatePicker::DATE_FORMAT_HIDDEN_FIELD = "%Y-%m-%d"
+  DatePicker::DATETIME_FORMAT_HIDDEN_FIELD = "%Y-%m-%d %H:%M:00"
   
   
   DatePicker::DATE_STRING_TOOLTIP = "Click to delete"

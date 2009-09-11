@@ -66,7 +66,7 @@ var Calendar = Class.create({
     this.hideOnClickOnDay          = params.hideOnClickOnDay      || false;
     this.hideOnClickElsewhere      = params.hideOnClickElsewhere  || false;
     this.extraOutputDateFields     = params.extraOutputDateFields || $A();
-
+    
     if (parentElement){
       this.parentElement = $(parentElement);
       this.parentElement._calendar = this;
@@ -85,6 +85,8 @@ var Calendar = Class.create({
         this.dateFormat = Calendar.defaultDateFormat;
       }
     }
+
+    this.dateFormatForHiddenField = params.dateFormatForHiddenField || this.dateFormat;
 
     this.build();
 
@@ -255,9 +257,9 @@ var Calendar = Class.create({
 
   updateOuterFieldReal: function(element){
     if (element.tagName == 'DIV' || element.tagName == 'SPAN') {
-      element.update(this.date.print(this.dateFormat))
+      element.update(this.date.print(this.dateFormat));
     } else if (element.tagName == 'INPUT') {
-      element.value = this.date.print(this.dateFormat)
+      element.value = this.date.print(this.dateFormatForHiddenField);
     }
   },
 

@@ -1,8 +1,12 @@
 module DatePicker
 
-    def select_date_datetime_common(options, initial_date, with_time, date_format)
+    def select_date_datetime_common(options, initial_date, with_time, date_format, date_format_hidden_field)
       
-      date_string = initial_date.nil? ? NIL_DATE_VIEW : initial_date.strftime(date_format)
+      date_string, date_string_for_hidden_field = if initial_date.nil? 
+        [NIL_DATE_VIEW, NIL_DATE_VIEW]
+      else
+        [initial_date.strftime(date_format), initial_date.strftime(date_format_hidden_field)]
+      end
       
       name = options[:prefix]
 
@@ -25,17 +29,18 @@ module DatePicker
         :title => DATE_STRING_TOOLTIP)
 
       date_picker << ' '
-      date_picker << hidden_field_tag(name, date_string, :class => 'text-input', :id => hidden_input_field_id)
+      date_picker << hidden_field_tag(name, date_string_for_hidden_field, :class => 'text-input', :id => hidden_input_field_id)
       date_picker << '</span>'
 
       date_picker << calendar_constructor(
-        popup_trigger_icon_id, hidden_input_field_id, date_format, date_view_id, 
+        popup_trigger_icon_id, hidden_input_field_id, date_format, date_format_hidden_field, date_view_id, 
         with_time.to_s, options[:on_hide], options[:on_changed], prompt_id, initial_date)
 
       return date_picker
     end
 
-    def calendar_constructor(popup_trigger_icon_id, hidden_input_field_id, date_format, date_view_id, with_time, 
+    def calendar_constructor(popup_trigger_icon_id, hidden_input_field_id, date_format, 
+                            date_format_hidden_field, date_view_id, with_time, 
                             on_hide, on_changed, prompt_id, initial_date)
       js =  %|<script type="text/javascript">\n|
       js << %|  document.observe('dom:loaded', function(){\n|
@@ -43,6 +48,7 @@ module DatePicker
       js << %|      triggerElement : "#{popup_trigger_icon_id}",\n|
       js << %|      dateField : "#{date_view_id}",\n|
       js << %|      dateFormat : "#{date_format}",\n|
+      js << %|      dateFormatForHiddenField : "#{date_format_hidden_field}",\n|
       js << %|      extraOutputDateFields : $A(["#{hidden_input_field_id}"]),\n |
       js << %|      hideOnClickElsewhere : #{ALLOW_ONLY_ONE_POPUP_CALENDAR},\n |
       js << %|      minuteStep : #{MINUTE_STEP},\n |
@@ -75,12 +81,12 @@ module DatePicker
     # Rails simple tag style view helpers
     def select_date(initial_date, opts = {}, html_opts = {})
       options = opt_process(opts)
-      select_date_datetime_common(options, initial_date, false, DATE_FORMAT)
+      select_date_datetime_common(options, initial_date, false, DATE_FORMAT, DATE_FORMAT_HIDDEN_FIELD)
     end
 
     def select_datetime(initial_date, opts = {}, html_opts = {})
       options = opt_process(opts)
-      select_date_datetime_common(options, initial_date, true, DATETIME_FORMAT)
+      select_date_datetime_common(options, initial_date, true, DATETIME_FORMAT, DATETIME_FORMAT_HIDDEN_FIELD)
     end
 
 
