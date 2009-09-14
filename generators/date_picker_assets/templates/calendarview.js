@@ -25,6 +25,7 @@ The differences from the original are
 * Support for time in the form of two dropdowns for hours and minutes. Can be turned off/on.
 * Draggable popup calendars (which introduces new dependancies: script.aculo.us effects.js and dragdrop.js)
 * Close button
+* Ability to unset the date by clicking on the active date
 * Popup calendars  are not created every time they pop up, on the contrary, they are created once just like
   embedded calendars, and then shown or hidden.
 * Possible to have many popup calendars on page. The behavior of the original calendarview when a popup
@@ -112,6 +113,7 @@ var Calendar = Class.create({
 
   // Build the DOM structure
   build: function(){
+    
     // If no parent was specified, assume that we are creating a popup calendar.
     if (this.parentElement) {
       var parentForCalendarTable = this.parentElement;
@@ -212,6 +214,7 @@ var Calendar = Class.create({
       }
 
       hourSelect.observe('change', function(event){
+        if (! this.date) return;        
         var elem = event.element();
         var selectedIndex = elem.selectedIndex;
         if ((typeof selectedIndex != 'undefined') && selectedIndex != null){
@@ -221,13 +224,14 @@ var Calendar = Class.create({
       }.bind(this));
 
       minuteSelect.observe('change', function(event){
+        if (! this.date) return;
         var elem = event.element();
         var selectedIndex = elem.selectedIndex;
         if ((typeof selectedIndex != 'undefined') && selectedIndex != null){
           this.date.setMinutes(elem.options[selectedIndex].value);
           this.updateOuterField();
         }
-      }.bind(this))
+      }.bind(this));
 
     }
 
@@ -257,9 +261,11 @@ var Calendar = Class.create({
 
   updateOuterFieldReal: function(element){
     if (element.tagName == 'DIV' || element.tagName == 'SPAN') {
-      element.update(this.date.print(this.dateFormat));
+      formatted = this.date ? this.date.print(this.dateFormat) : ''
+      element.update(formatted);
     } else if (element.tagName == 'INPUT') {
-      element.value = this.date.print(this.dateFormatForHiddenField);
+      formatted = this.date ? this.date.print(this.dateFormatForHiddenField) : ''      
+      element.value = formatted;
     }
   },
 
@@ -277,11 +283,13 @@ var Calendar = Class.create({
   //----------------------------------------------------------------------------
 
   update: function(date) {
-    var calendar   = this
-    var today      = new Date()
-    var thisYear   = today.getFullYear()
-    var thisMonth  = today.getMonth()
-    var thisDay    = today.getDate()
+    
+    // this.dumpDates();
+    
+    var today      = new Date();
+    var thisYear   = today.getFullYear();
+    var thisMonth  = today.getMonth();
+    var thisDay    = today.getDate();
     var month      = date.getMonth();
     var dayOfMonth = date.getDate();
     var hour       = date.getHours();
@@ -293,7 +301,11 @@ var Calendar = Class.create({
     else if (date.getFullYear() > this.maxYear)
       date.__setFullYear(this.maxYear)
 
-    this.date = new Date(date);
+    if (this.isBackedUp()){
+      this.dateBackedUp = new Date(date);
+    }else{
+      this.date = new Date(date);
+    }
 
     // Calculate the first day to display (including the previous month)
     date.setDate(1)
@@ -321,9 +333,11 @@ var Calendar = Class.create({
               rowHasDays = true
 
             // Ensure the current day is selected
-            if (isCurrentMonth && day == dayOfMonth) {
-              cell.addClassName('selected')
-              calendar.currentDateElement = cell
+            
+            
+            if ((! this.isBackedUp()) && isCurrentMonth && day == dayOfMonth) {
+              cell.addClassName('selected');
+              this.currentDateElement = cell;
             }
 
             // Today
@@ -336,11 +350,11 @@ var Calendar = Class.create({
 
             // Set the date to tommorrow
             date.setDate(day + 1)
-          }
+          }.bind(this)
         )
         // Hide the extra row if it contains only days from another month
         !rowHasDays ? row.hide() : row.show()
-      }
+      }.bind(this)
     )
 
     Element.getElementsBySelector(this.container, 'tfoot tr td select').each(
@@ -358,8 +372,10 @@ var Calendar = Class.create({
     )
 
     this.container.getElementsBySelector('td.title')[0].update(
-      Calendar.MONTH_NAMES[month] + ' ' + this.date.getFullYear()
+      Calendar.MONTH_NAMES[month] + ' ' + this.dateOrDateBackedUp().getFullYear()
     )
+    
+    this.dumpDates();
   },
 
 
@@ -447,9 +463,40 @@ var Calendar = Class.create({
   },
 
 
+  dateOrDateBackedUp: function(){
+    return this.date || this.dateBackedUp;
+  },
+
   updateIfDateDifferent: function(date) {
-    if (!date.equalsTo(this.date))
+    if (!date.equalsTo(this.dateOrDateBackedUp())){
       this.update(date);
+    }
+  },
+  
+  backupDateAndCurrentElement: function(){
+    this.currentDateElementBackedUp = this.currentDateElement;
+    this.currentDateElement = null;
+    
+    this.dateBackedUp = this.date;
+    this.date = null;
+  },
+
+  isBackedUp: function(){
+    return ((this.date == null) && this.dateBackedUp);
+  },
+
+  dumpDates: function(){
+    console.log('date: ' + this.date);
+    console.log('dateBackedUp: ' + this.dateBackedUp);
+  },
+
+
+  restoreDateAndCurrentElement: function(){
+    this.currentDateElement = this.currentDateElementBackedUp;
+    this.currentDateElementBackedUp = null;
+    
+    this.date = this.dateBackedUp;
+    this.dateBackedUp = null;
   },
 
 
@@ -519,18 +566,17 @@ Calendar._checkCalendar = function(event) {
 
 Calendar.handleMouseDownEvent = function(event){
   if (event.element().type == 'select-one'){ // ignore select elements - not escaping this in Safari leaves select boxes non-functional
-    return true
+    return true;
   }
   Event.observe(document, 'mouseup', Calendar.handleMouseUpEvent)
   Event.stop(event)
 }
 
-// XXX I am not happy with how clicks of different actions are handled. Need to
-// clean this up!
 Calendar.handleMouseUpEvent = function(event){
-  var el        = Event.element(event)
-  var calendar  = el.calendar
-  var isNewDate = false
+  var el        = Event.element(event);
+  var calendar  = el.calendar;
+  var isNewDate = false;
+  
 
   // If the element that was clicked on does not have an associated Calendar
   // object, return as we have nothing to do.
@@ -538,9 +584,28 @@ Calendar.handleMouseUpEvent = function(event){
 
   // Clicked on a day
   if (typeof el.navAction == 'undefined') {
+    
+    var dateWasDefined = true;
+    if (calendar.date == null){
+      dateWasDefined = false;
+      calendar.restoreDateAndCurrentElement();
+    }
+    
+    
     if (calendar.currentDateElement) {
       Element.removeClassName(calendar.currentDateElement, 'selected');
+
+      if (dateWasDefined && el == calendar.currentDateElement){
+        calendar.backupDateAndCurrentElement();
+        
+        calendar.updateOuterField();
+        
+        Event.stopObserving(document, 'mouseup', Calendar.handleMouseUpEvent);
+        return Event.stop(event);
+      }
+
       Element.addClassName(el, 'selected');
+      
       calendar.shouldClose = (calendar.currentDateElement == el);
 
       if (!calendar.shouldClose) {
@@ -560,20 +625,23 @@ Calendar.handleMouseUpEvent = function(event){
     }
 
   } else { // Clicked on an action button
-    var date = new Date(calendar.date)
-
+    
+    var date = new Date(calendar.dateOrDateBackedUp());
+    
     if (el.navAction == Calendar.NAV_TODAY){
       date.setDateOnly(new Date());
     }
 
-    var year = date.getFullYear()
-    var mon = date.getMonth()
+    var year = date.getFullYear();
+    var mon = date.getMonth();
+
     function setMonth(m) {
       var day = date.getDate();
       var max = date.getMonthDays(m);
       if (day > max) date.setDate(max);
       date.setMonth(m)
     }
+
     switch (el.navAction) {
 
       // Previous Year
@@ -591,7 +659,7 @@ Calendar.handleMouseUpEvent = function(event){
           date.__setFullYear(year);
           setMonth(11);
         }
-        break
+        break;
 
       // Today
       case Calendar.NAV_TODAY:
@@ -615,19 +683,23 @@ Calendar.handleMouseUpEvent = function(event){
         break;
     }
 
-    if (!date.equalsTo(calendar.date)) {
-      calendar.updateIfDateDifferent(date)
+    if (!date.equalsTo(calendar.dateOrDateBackedUp())) {
+      calendar.updateIfDateDifferent(date);
       isNewDate = true;
     } else if (el.navAction == 0) {
       isNewDate = (calendar.shouldClose = true);
     }
   }
-
-  if (isNewDate) event && Calendar.selectHandler(calendar, calendar.date.print(calendar.dateFormat));
-  if (calendar.shouldClose) event && Calendar.closeHandler(calendar);
+  
+  if (isNewDate && event) {
+    Calendar.selectHandler(calendar);
+  }
+  
+  if (calendar.shouldClose && event) {
+    Calendar.closeHandler(calendar);
+  }
 
   Event.stopObserving(document, 'mouseup', Calendar.handleMouseUpEvent);
-
   return Event.stop(event);
 }
 
