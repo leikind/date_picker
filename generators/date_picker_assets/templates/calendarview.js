@@ -406,7 +406,7 @@ var Calendar = Class.create({
   _drawButtonCell: function(parentForCell, text, colSpan, navAction) {
     var cell          = new Element('td')
     if (colSpan > 1) cell.colSpan = colSpan
-    cell.className    = 'button'
+    cell.className    = 'cvbutton'
     cell.calendar     = this
     cell.navAction    = navAction
     cell.innerHTML    = text
