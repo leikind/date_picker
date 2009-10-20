@@ -375,7 +375,7 @@ var Calendar = Class.create({
       Calendar.MONTH_NAMES[month] + ' ' + this.dateOrDateBackedUp().getFullYear()
     )
     
-    this.dumpDates();
+    // this.dumpDates();
   },
 
 
