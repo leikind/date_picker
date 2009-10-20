@@ -127,13 +127,13 @@ module DatePicker
     end
 
     # Rails object-style view helpers - just forming a call to tag style view helpers and reusing them
-    def date_select(object_name, method, options = {})
+    def date_select(object_name, method, options = {}, html_options = {})
       initial_date, opts = object_style_to_tag_style(object_name, method, options)
 
       select_date(initial_date, opts)
     end
 
-    def datetime_select(object_name, method, options = {})
+    def datetime_select(object_name, method, options = {}, html_options = {})
       initial_date, opts = object_style_to_tag_style(object_name, method, options)
 
       select_datetime(initial_date, opts)
