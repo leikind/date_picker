@@ -56,6 +56,10 @@ var Calendar = Class.create({
 
   initialize: function(params){
 
+    if (! Calendar.init_done){
+      Calendar.init();
+    }
+
     parentElement        = params.parentElement        || null; // just getting rid of undefined 'values' :)
     withTime             = params.withTime             || null;
     dateFormat           = params.dateFormat           || null;
@@ -89,13 +93,12 @@ var Calendar = Class.create({
 
     this.dateFormatForHiddenField = params.dateFormatForHiddenField || this.dateFormat;
 
-    this.build();
-
     if (dateField) {
       this.dateField = $(dateField);
-      this.parseDate(this.dateField.innerHTML || this.dateField.value);
+      this.date = this.parseDate(this.dateField.innerHTML || this.dateField.value);
     }
 
+    this.build();
 
     if (this.isPopup) { //Popup Calendars
       var triggerElement = $(triggerElement || dateField);
@@ -109,11 +112,13 @@ var Calendar = Class.create({
       this.show();
     }
 
+    if (params.updateOuterFieldsOnInit){
+      this.updateOuterFieldWithoutCallback(); // Just for the sake of localization and DatePicker
+    }
   },
 
   // Build the DOM structure
   build: function(){
-    
     // If no parent was specified, assume that we are creating a popup calendar.
     if (this.parentElement) {
       var parentForCalendarTable = this.parentElement;
@@ -169,7 +174,7 @@ var Calendar = Class.create({
     var row = new Element('tr')
     this._drawButtonCell(row, '&#x00ab;', 1, Calendar.NAV_PREVIOUS_YEAR);
     this._drawButtonCell(row, '&#x2039;', 1, Calendar.NAV_PREVIOUS_MONTH);
-    this._drawButtonCell(row, 'Today',    3, Calendar.NAV_TODAY);
+    this._drawButtonCell(row,   Calendar.getMessageFor('today'),    3, Calendar.NAV_TODAY);
     this._drawButtonCell(row, '&#x203a;', 1, Calendar.NAV_NEXT_MONTH);
     this._drawButtonCell(row, '&#x00bb;', 1, Calendar.NAV_NEXT_YEAR);
     thead.appendChild(row)
@@ -245,7 +250,7 @@ var Calendar = Class.create({
     this.container.appendChild(table)
 
     // Initialize Calendar
-    this.update(this.date)
+    this.update(this.date);
 
     // Observe the container for mousedown events
     Event.observe(this.container, 'mousedown', Calendar.handleMouseDownEvent)
@@ -256,7 +261,6 @@ var Calendar = Class.create({
     if (this.isPopup){
       new Draggable(table, {handle : firstRow });
     }
-
   },
 
   updateOuterFieldReal: function(element){
@@ -264,17 +268,22 @@ var Calendar = Class.create({
       formatted = this.date ? this.date.print(this.dateFormat) : ''
       element.update(formatted);
     } else if (element.tagName == 'INPUT') {
-      formatted = this.date ? this.date.print(this.dateFormatForHiddenField) : ''      
+      formatted = this.date ? this.date.print(this.dateFormatForHiddenField) : '';
       element.value = formatted;
     }
   },
 
-  updateOuterField: function(){
+  updateOuterFieldWithoutCallback: function(){
     this.updateOuterFieldReal(this.dateField);
     this.extraOutputDateFields.each(function(field){
       this.updateOuterFieldReal($(field));
     }.bind(this));
-    this.onDateChangedCallback(this.date, this);    
+  },
+
+
+  updateOuterField: function(){
+    this.updateOuterFieldWithoutCallback();
+    this.onDateChangedCallback(this.date, this);
   },
 
 
@@ -284,7 +293,7 @@ var Calendar = Class.create({
 
   update: function(date) {
     
-    // this.dumpDates();
+    this.dumpDates();
     
     var today      = new Date();
     var thisYear   = today.getFullYear();
@@ -310,6 +319,8 @@ var Calendar = Class.create({
     // Calculate the first day to display (including the previous month)
     date.setDate(1)
     date.setDate(-(date.getDay()) + 1)
+
+    this.dumpDates();
 
     // Fill in the days of the month
     Element.getElementsBySelector(this.container, 'tbody tr').each(
@@ -457,9 +468,11 @@ var Calendar = Class.create({
   // Tries to identify the date represented in a string.  If successful it also
   // calls this.updateIfDateDifferent which moves the calendar to the given date.
   parseDate: function(str, format){
-    if (!format)
+    if (!format){
       format = this.dateFormat
-    this.updateIfDateDifferent(Date.parseDate(str, format))
+    }
+    var res = Date.parseDate(str, format);
+    return res;
   },
 
 
@@ -512,29 +525,213 @@ var Calendar = Class.create({
 // Constants
 //------------------------------------------------------------------------------
 
+
+Calendar.messagebundle = $H({'en' :
+  $H({
+    'monday' : 'Monday', 
+    'tuesday' : 'Tuesday', 
+    'wednesday' : 'Wednesday', 
+    'thursday' : 'Thursday', 
+    'friday' : 'Friday', 
+    'saturday' : 'Saturday',
+    'sunday' : 'Sunday',
+
+    'monday_short' : 'M', 
+    'tuesday_short' : 'T', 
+    'wednesday_short' : 'W', 
+    'thursday_short' : 'T', 
+    'friday_short' : 'F', 
+    'saturday_short' : 'S',
+    'sunday_short' : 'S',
+
+    'january' : 'January', 
+    'february' : 'February', 
+    'march' : 'March', 
+    'april' : 'April', 
+    'may' : 'May', 
+    'june' : 'June', 
+    'july'  : 'July', 
+    'august' : 'August',
+    'september'  : 'September', 
+    'october' : 'October', 
+    'november' : 'November', 
+    'december' : 'December',
+
+    'january_short' : 'Jan', 
+    'february_short' : 'Feb', 
+    'march_short' : 'Mar', 
+    'april_short' : 'Apr', 
+    'may_short' : 'May', 
+    'june_short' : 'Jun', 
+    'july_short'  : 'Jul', 
+    'august_short' : 'Aug',
+    'september_short'  : 'Sep', 
+    'october_short' : 'Oct', 
+    'november_short' : 'Nov', 
+    'december_short' : 'Dec',
+
+    'today' : 'Today'
+  }),
+  'fr' :
+    $H({
+      'monday' : 'Lundi', 
+      'tuesday' : 'Mardi', 
+      'wednesday' : 'Mercredi', 
+      'thursday' : 'Jeudi', 
+      'friday' : 'Vendredi', 
+      'saturday' : 'Vendredi',
+      'sunday' : 'Dimanche',
+
+      'monday_short' : 'L', 
+      'tuesday_short' : 'M', 
+      'wednesday_short' : 'M', 
+      'thursday_short' : 'J', 
+      'friday_short' : 'V', 
+      'saturday_short' : 'V',
+      'sunday_short' : 'D',
+
+      'january' : 'janvier', 
+      'february' : 'février', 
+      'march' : 'mars', 
+      'april' : 'avril', 
+      'may' : 'mai', 
+      'june' : 'juin', 
+      'july'  : 'juillet', 
+      'august' : 'août',
+      'september'  : 'septembre', 
+      'october' : 'octobre', 
+      'november' : 'novembre', 
+      'december' : 'décembre',
+
+      'january_short' : 'jan', 
+      'february_short' : 'fév', 
+      'march_short' : 'mar', 
+      'april_short' : 'avr', 
+      'may_short' : 'mai', 
+      'june_short' : 'jui', 
+      'july_short'  : 'jui', 
+      'august_short' : 'aoû',
+      'september_short'  : 'sep', 
+      'october_short' : 'oct', 
+      'november_short' : 'nov', 
+      'december_short' : 'dec',
+
+      'today' : 'aujourd\'hui'
+    }),
+    'nl' :
+      $H({
+        'monday' : 'maandag', 
+        'tuesday' : 'dinsdag', 
+        'wednesday' : 'woensdag', 
+        'thursday' : 'donderdag', 
+        'friday' : 'vrijdag', 
+        'saturday' : 'zaterdag',
+        'sunday' : 'zondag',
+
+        'monday_short' : 'ma', 
+        'tuesday_short' : 'di', 
+        'wednesday_short' : 'wo', 
+        'thursday_short' : 'do', 
+        'friday_short' : 'vr', 
+        'saturday_short' : 'za',
+        'sunday_short' : 'zo',
+
+        'january' : 'januari', 
+        'february' : 'februari', 
+        'march' : 'maart', 
+        'april' : 'april', 
+        'may' : 'mei', 
+        'june' : 'juni', 
+        'july'  : 'juli', 
+        'august' : 'augustus',
+        'september'  : 'september', 
+        'october' : 'oktober', 
+        'november' : 'november', 
+        'december' : 'december',
+
+        'january_short' : 'jan', 
+        'february_short' : 'feb', 
+        'march_short' : 'mrt', 
+        'april_short' : 'apr', 
+        'may_short' : 'mei', 
+        'june_short' : 'jun', 
+        'july_short'  : 'jul', 
+        'august_short' : 'aug',
+        'september_short'  : 'sep', 
+        'october_short' : 'okt', 
+        'november_short' : 'nov', 
+        'december_short' : 'dec',
+
+        'today' : 'vandaag'
+      })  
+});
+
+
+Calendar.getMessageFor = function(key){
+
+  var lang = Calendar.language || 'en';
+  return Calendar.messagebundle.get(lang).get(key);
+};
+
 Calendar.VERSION = '1.2';
 
 Calendar.defaultDateFormat = '%Y-%m-%d';
 Calendar.defaultDateTimeFormat = '%Y-%m-%d %H:%M';
 
-Calendar.DAY_NAMES = new Array(
-  'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
-  'Sunday'
-);
+// we need to postpone the initialization of these structures to let the page define the language of the page
+Calendar.init =  function(){
 
-Calendar.SHORT_DAY_NAMES = new Array(
-  'S', 'M', 'T', 'W', 'T', 'F', 'S', 'S'
-);
+  Calendar.DAY_NAMES = new Array(
+    Calendar.getMessageFor('monday'),
+    Calendar.getMessageFor('tuesday'),
+    Calendar.getMessageFor('wednesday'),
+    Calendar.getMessageFor('thursday'),
+    Calendar.getMessageFor('friday'),
+    Calendar.getMessageFor('saturday'),
+    Calendar.getMessageFor('sunday')
+  );
 
-Calendar.MONTH_NAMES = new Array(
-  'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-  'September', 'October', 'November', 'December'
-);
+  Calendar.SHORT_DAY_NAMES = new Array(
+    Calendar.getMessageFor('monday_short'),
+    Calendar.getMessageFor('tuesday_short'),
+    Calendar.getMessageFor('wednesday_short'),
+    Calendar.getMessageFor('thursday_short'),
+    Calendar.getMessageFor('friday_short'),
+    Calendar.getMessageFor('saturday_short'),
+    Calendar.getMessageFor('sunday_short')
+  );
 
-Calendar.SHORT_MONTH_NAMES = new Array(
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov',
-  'Dec'
-);
+  Calendar.MONTH_NAMES = new Array(
+    Calendar.getMessageFor('january'),
+    Calendar.getMessageFor('february'),
+    Calendar.getMessageFor('march'),
+    Calendar.getMessageFor('april'),
+    Calendar.getMessageFor('may'),
+    Calendar.getMessageFor('june'),
+    Calendar.getMessageFor('july'),
+    Calendar.getMessageFor('august'),
+    Calendar.getMessageFor('september'),
+    Calendar.getMessageFor('october'),
+    Calendar.getMessageFor('november'),
+    Calendar.getMessageFor('december')
+  );
+
+  Calendar.SHORT_MONTH_NAMES = new Array(
+    Calendar.getMessageFor('january_short'),
+    Calendar.getMessageFor('february_short'),
+    Calendar.getMessageFor('march_short'),
+    Calendar.getMessageFor('april_short'),
+    Calendar.getMessageFor('may_short'),
+    Calendar.getMessageFor('june_short'),
+    Calendar.getMessageFor('july_short'),
+    Calendar.getMessageFor('august_short'),
+    Calendar.getMessageFor('september_short'),
+    Calendar.getMessageFor('october_short'),
+    Calendar.getMessageFor('november_short'),
+    Calendar.getMessageFor('december_short')
+  );
+  Calendar.init_done = true;
+};
 
 Calendar.NAV_PREVIOUS_YEAR  = -2;
 Calendar.NAV_PREVIOUS_MONTH = -1;
@@ -609,12 +806,16 @@ Calendar.handleMouseUpEvent = function(event){
       calendar.shouldClose = (calendar.currentDateElement == el);
 
       if (!calendar.shouldClose) {
+
         calendar.currentDateElement = el;
       }
     }
-    calendar.date.setDateOnly(el.date)
-    isNewDate = true
+    calendar.date.setDateOnly(el.date);
+    isNewDate = true;
+
     calendar.shouldClose = !el.hasClassName('otherDay');
+
+
     var isOtherMonth     = !calendar.shouldClose;
     if (isOtherMonth) {
       calendar.update(calendar.date)
@@ -686,9 +887,9 @@ Calendar.handleMouseUpEvent = function(event){
     if (!date.equalsTo(calendar.dateOrDateBackedUp())) {
       calendar.updateIfDateDifferent(date);
       isNewDate = true;
-    } else if (el.navAction == 0) {
-      isNewDate = (calendar.shouldClose = true);
-    }
+    } // else if (el.navAction == 0) {
+    //   isNewDate = (calendar.shouldClose = true);
+    // } // Hm, what did I mean with this code?
   }
   
   if (isNewDate && event) {
@@ -988,4 +1189,6 @@ Date.prototype.__setFullYear = function(y) {
   if (d.getMonth() != this.getMonth())
     this.setDate(28);
   this.setFullYear(y);
-}
+};
+
+

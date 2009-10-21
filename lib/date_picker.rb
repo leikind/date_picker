@@ -6,11 +6,15 @@ module DatePicker
         :hide_on_click_on_day => HIDE_ON_CLICK_ON_DAY
       }
       options.merge!(opts)
+      initial_date ||= options[:default]
 
       date_string, date_string_for_hidden_field = if initial_date.nil? 
-        [NIL_DATE_VIEW, NIL_DATE_VIEW]
+        [NIL_DATE_VIEW] * 2
       else
-        [initial_date.strftime(date_format), initial_date.strftime(date_format_hidden_field)]
+        # [initial_date.strftime(date_format), initial_date.strftime(date_format_hidden_field)]
+        
+        # as a temporary workaround
+        [initial_date.strftime(date_format_hidden_field)] * 2
       end
       
       name = options[:prefix]
@@ -41,20 +45,27 @@ module DatePicker
       date_picker << '</span>'
 
       date_picker << calendar_constructor(
-        popup_trigger_icon_id, hidden_input_field_id, date_format, date_format_hidden_field, date_view_id, 
-        with_time.to_s, options[:on_hide], options[:on_changed], prompt_id, initial_date, options[:embedded], options[:hide_on_click_on_day])
+        popup_trigger_icon_id, hidden_input_field_id, date_format, date_format_hidden_field, date_view_id,
+        with_time.to_s, options[:on_hide], options[:on_changed], prompt_id, initial_date, 
+        options[:embedded], options[:hide_on_click_on_day], (initial_date.nil? ? false : true) )
 
       return date_picker
     end
 
     def calendar_constructor(popup_trigger_icon_id, hidden_input_field_id, date_format, 
                             date_format_hidden_field, date_view_id, with_time, 
-                            on_hide, on_changed, prompt_id, initial_date, embedded, hide_on_click_on_day)
+                            on_hide, on_changed, prompt_id, initial_date, embedded, hide_on_click_on_day, update_outer_fields_on_init)
 
       parent_or_trigger_definition = embedded ? 'parentElement' : 'triggerElement'
 
       js =  %|<script type="text/javascript">\n|
       js << %|  document.observe('dom:loaded', function(){\n|
+        
+      if DatePicker.const_defined?('LANGUAGE') && ! @_date_picker_language_initialized
+        js << %|    Calendar.language = '#{DatePicker::LANGUAGE}';\n|
+        @_date_picker_language_initialized = true
+      end
+
       js << %|    new Calendar({\n|
       js << %|      #{parent_or_trigger_definition} : "#{popup_trigger_icon_id}",\n|
 
@@ -63,6 +74,10 @@ module DatePicker
       else
         js << %|      dateField : "#{date_view_id}",\n|
         js << %|      extraOutputDateFields : $A(["#{hidden_input_field_id}"]),\n |
+      end
+
+      if update_outer_fields_on_init
+        js << %|      updateOuterFieldsOnInit : true,\n|
       end
 
       js << %|       hideOnClickOnDay :  #{hide_on_click_on_day.inspect},\n | unless embedded
@@ -118,7 +133,8 @@ module DatePicker
       opts = {:prefix => name,
        :id => id,
        :on_changed => options[:on_changed],
-       :on_hide => options[:on_hide]
+       :on_hide => options[:on_hide],
+       :default => options[:default]
       }
       opts[:embedded] = options[:embedded] if options.has_key?(:embedded)
       opts[:hide_on_click_on_day] = options[:hide_on_click_on_day] if options.has_key?(:hide_on_click_on_day)
