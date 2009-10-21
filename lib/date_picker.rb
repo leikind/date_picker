@@ -128,6 +128,9 @@ module DatePicker
       name = options[:name].nil? ? "#{object_name}[#{method}]" : options[:name]
       id = options[:id].nil? ? "#{object_name}_#{method}" : options[:id]
       it = ::ActionView::Helpers::InstanceTag.new(object_name, method, self, options.delete(:object))
+      if it.object.nil? # Well, Rails helpers don't throw exceptions in this case, at least FormHelper helpers
+        return [nil, nil]
+      end
       initial_date = it.object.send(method)
       
       opts = {:prefix => name,
@@ -145,13 +148,19 @@ module DatePicker
     # Rails object-style view helpers - just forming a call to tag style view helpers and reusing them
     def date_select(object_name, method, options = {}, html_options = {})
       initial_date, opts = object_style_to_tag_style(object_name, method, options)
-
-      select_date(initial_date, opts)
+      if opts.nil?
+        ''
+      else
+        select_date(initial_date, opts)
+      end
     end
 
     def datetime_select(object_name, method, options = {}, html_options = {})
       initial_date, opts = object_style_to_tag_style(object_name, method, options)
-
-      select_datetime(initial_date, opts)
+      if opts.nil?
+        ''
+      else
+        select_datetime(initial_date, opts)
+      end
     end
 end
