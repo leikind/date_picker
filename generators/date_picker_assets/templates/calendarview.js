@@ -26,6 +26,8 @@ The differences from the original are
 * Draggable popup calendars (which introduces new dependancies: script.aculo.us effects.js and dragdrop.js)
 * Close button
 * Ability to unset the date by clicking on the active date
+* Simple I18n support
+* Removed all ambiguity in the API
 * Popup calendars  are not created every time they pop up, on the contrary, they are created once just like
   embedded calendars, and then shown or hidden.
 * Possible to have many popup calendars on page. The behavior of the original calendarview when a popup
@@ -35,6 +37,14 @@ The differences from the original are
 
 */
 
+
+/*
+extraOutputDateFields -> outputFields
+dateField removed
+initialDate added
+parentElement -> embedAt
+triggerElement -> popupTriggerElement
+*/
 
 
 var Calendar = Class.create({
@@ -60,23 +70,27 @@ var Calendar = Class.create({
       Calendar.init();
     }
 
-    parentElement        = params.parentElement        || null; // just getting rid of undefined 'values' :)
-    withTime             = params.withTime             || null;
-    dateFormat           = params.dateFormat           || null;
-    dateField            = params.dateField            || null;
-    triggerElement       = params.triggerElement       || null;
-    this.onHideCallback  = params.onHideCallback           || function(date, calendar){};
+    embedAt                   = params.embedAt              || null;
+    withTime                  = params.withTime             || null;
+    dateFormat                = params.dateFormat           || null;
+    initialDate               = params.initialDate          || null;
+    popupTriggerElement       = params.popupTriggerElement        || null;
+    this.onHideCallback       = params.onHideCallback             || function(date, calendar){};
     this.onDateChangedCallback     = params.onDateChangedCallback || function(date, calendar){};
     this.minuteStep                = params.minuteStep            || 5;
     this.hideOnClickOnDay          = params.hideOnClickOnDay      || false;
     this.hideOnClickElsewhere      = params.hideOnClickElsewhere  || false;
-    this.extraOutputDateFields     = params.extraOutputDateFields || $A();
-    
-    if (parentElement){
-      this.parentElement = $(parentElement);
-      this.parentElement._calendar = this;
+    this.outputFields              = params.outputFields          || $A();
+
+    this.outputFields = $A(this.outputFields).collect(function(f){
+      return $(f);
+    });
+
+    if (embedAt){
+      this.embedAt = $(embedAt);
+      this.embedAt._calendar = this;
     }else{
-      this.parentElement = null;
+      this.embedAt = null;
     }
 
     this.withTime      = withTime;
@@ -93,19 +107,19 @@ var Calendar = Class.create({
 
     this.dateFormatForHiddenField = params.dateFormatForHiddenField || this.dateFormat;
 
-    if (dateField) {
-      this.dateField = $(dateField);
-      this.date = this.parseDate(this.dateField.innerHTML || this.dateField.value);
+
+    if (initialDate) {
+      this.date = this.parseDate(initialDate);
     }
 
     this.build();
 
     if (this.isPopup) { //Popup Calendars
-      var triggerElement = $(triggerElement || dateField);
-      triggerElement._calendar = this;
+      var popupTriggerElement = $(popupTriggerElement);
+      popupTriggerElement._calendar = this;
       
-      triggerElement.onclick = function() {
-        this.showAtElement(triggerElement);
+      popupTriggerElement.onclick = function() {
+        this.showAtElement(popupTriggerElement);
       }.bind(this);
 
     } else{ // In-Page Calendar
@@ -120,11 +134,11 @@ var Calendar = Class.create({
   // Build the DOM structure
   build: function(){
     // If no parent was specified, assume that we are creating a popup calendar.
-    if (this.parentElement) {
-      var parentForCalendarTable = this.parentElement;
+    if (this.embedAt) {
+      var parentForCalendarTable = this.embedAt;
       this.isPopup = false;
     } else {
-      parentForCalendarTable = document.getElementsByTagName('body')[0];
+      var parentForCalendarTable = document.getElementsByTagName('body')[0];
       this.isPopup = true;
     }
 
@@ -210,6 +224,7 @@ var Calendar = Class.create({
       for (var i = 0; i < 24; i++) {
         hourSelect.appendChild(new Element('option', {value : i}).update(i));
       }
+      this.hourSelect = hourSelect;
 
       cell.appendChild(new Element('span')).update(' : ');
 
@@ -217,7 +232,8 @@ var Calendar = Class.create({
       for (var i = 0; i < 60; i += this.minuteStep) {
         minuteSelect.appendChild(new Element('option', {value : i}).update(i));
       }
-
+      this.minuteSelect = minuteSelect;
+      
       hourSelect.observe('change', function(event){
         if (! this.date) return;        
         var elem = event.element();
@@ -274,9 +290,8 @@ var Calendar = Class.create({
   },
 
   updateOuterFieldWithoutCallback: function(){
-    this.updateOuterFieldReal(this.dateField);
-    this.extraOutputDateFields.each(function(field){
-      this.updateOuterFieldReal($(field));
+    this.outputFields.each(function(field){
+      this.updateOuterFieldReal(field);
     }.bind(this));
   },
 
@@ -286,14 +301,22 @@ var Calendar = Class.create({
     this.onDateChangedCallback(this.date, this);
   },
 
+  viewOutputFields: function(){
+    return this.outputFields.findAll(function(element){
+      if (element.tagName == 'DIV' || element.tagName == 'SPAN'){
+        return true;
+      }else{
+        return false;
+      }
+    });
+  },
+
 
   //----------------------------------------------------------------------------
   // Update  Calendar
   //----------------------------------------------------------------------------
 
   update: function(date) {
-    
-    this.dumpDates();
     
     var today      = new Date();
     var thisYear   = today.getFullYear();
@@ -319,8 +342,6 @@ var Calendar = Class.create({
     // Calculate the first day to display (including the previous month)
     date.setDate(1)
     date.setDate(-(date.getDay()) + 1)
-
-    this.dumpDates();
 
     // Fill in the days of the month
     Element.getElementsBySelector(this.container, 'tbody tr').each(
@@ -386,7 +407,6 @@ var Calendar = Class.create({
       Calendar.MONTH_NAMES[month] + ' ' + this.dateOrDateBackedUp().getFullYear()
     )
     
-    // this.dumpDates();
   },
 
 
@@ -487,11 +507,33 @@ var Calendar = Class.create({
   },
   
   backupDateAndCurrentElement: function(){
+    if (this.minuteSelect){
+      this.minuteSelect.disable();
+    }
+    if (this.hourSelect){
+      this.hourSelect.disable();
+    }
+    
     this.currentDateElementBackedUp = this.currentDateElement;
     this.currentDateElement = null;
     
     this.dateBackedUp = this.date;
     this.date = null;
+  },
+
+  restoreDateAndCurrentElement: function(){
+    if (this.minuteSelect){
+      this.minuteSelect.enable();
+    }
+    if (this.hourSelect){
+      this.hourSelect.enable();
+    }
+    
+    this.currentDateElement = this.currentDateElementBackedUp;
+    this.currentDateElementBackedUp = null;
+    
+    this.date = this.dateBackedUp;
+    this.dateBackedUp = null;
   },
 
   isBackedUp: function(){
@@ -504,13 +546,6 @@ var Calendar = Class.create({
   },
 
 
-  restoreDateAndCurrentElement: function(){
-    this.currentDateElement = this.currentDateElementBackedUp;
-    this.currentDateElementBackedUp = null;
-    
-    this.date = this.dateBackedUp;
-    this.dateBackedUp = null;
-  },
 
 
   setRange: function(minYear, maxYear) {
@@ -525,7 +560,7 @@ var Calendar = Class.create({
 // Constants
 //------------------------------------------------------------------------------
 
-
+// Delete or add new locales from I18n.js according to your needs
 Calendar.messagebundle = $H({'en' :
   $H({
     'monday' : 'Monday', 
@@ -579,16 +614,16 @@ Calendar.messagebundle = $H({'en' :
       'wednesday' : 'Mercredi', 
       'thursday' : 'Jeudi', 
       'friday' : 'Vendredi', 
-      'saturday' : 'Vendredi',
+      'saturday' : 'Samedi',
       'sunday' : 'Dimanche',
 
-      'monday_short' : 'L', 
-      'tuesday_short' : 'M', 
-      'wednesday_short' : 'M', 
-      'thursday_short' : 'J', 
-      'friday_short' : 'V', 
-      'saturday_short' : 'V',
-      'sunday_short' : 'D',
+      'monday_short' : 'Lu', 
+      'tuesday_short' : 'Ma', 
+      'wednesday_short' : 'Me', 
+      'thursday_short' : 'Je', 
+      'friday_short' : 'Ve', 
+      'saturday_short' : 'Sa',
+      'sunday_short' : 'Di',
 
       'january' : 'janvier', 
       'february' : 'février', 
@@ -608,8 +643,8 @@ Calendar.messagebundle = $H({'en' :
       'march_short' : 'mar', 
       'april_short' : 'avr', 
       'may_short' : 'mai', 
-      'june_short' : 'jui', 
-      'july_short'  : 'jui', 
+      'june_short' : 'jun', 
+      'july_short'  : 'jul', 
       'august_short' : 'aoû',
       'september_short'  : 'sep', 
       'october_short' : 'oct', 
@@ -628,13 +663,13 @@ Calendar.messagebundle = $H({'en' :
         'saturday' : 'zaterdag',
         'sunday' : 'zondag',
 
-        'monday_short' : 'ma', 
-        'tuesday_short' : 'di', 
-        'wednesday_short' : 'wo', 
-        'thursday_short' : 'do', 
-        'friday_short' : 'vr', 
-        'saturday_short' : 'za',
-        'sunday_short' : 'zo',
+        'monday_short' : 'Ma', 
+        'tuesday_short' : 'Di', 
+        'wednesday_short' : 'Wo', 
+        'thursday_short' : 'Do', 
+        'friday_short' : 'Vr', 
+        'saturday_short' : 'Za',
+        'sunday_short' : 'Zo',
 
         'january' : 'januari', 
         'february' : 'februari', 
@@ -673,7 +708,7 @@ Calendar.getMessageFor = function(key){
   return Calendar.messagebundle.get(lang).get(key);
 };
 
-Calendar.VERSION = '1.2';
+Calendar.VERSION = '1.3';
 
 Calendar.defaultDateFormat = '%Y-%m-%d';
 Calendar.defaultDateTimeFormat = '%Y-%m-%d %H:%M';
@@ -905,17 +940,10 @@ Calendar.handleMouseUpEvent = function(event){
 }
 
 Calendar.selectHandler = function(calendar){
-  if (!calendar.dateField) {
-    return false;
-  }
 
   // Update dateField value
   calendar.updateOuterField();
 
-  // Trigger the onchange callback on the dateField, if one has been defined
-  if (typeof calendar.dateField.onchange == 'function'){
-    calendar.dateField.onchange();
-  }
 
   // Call the close handler, if necessary
   if (calendar.shouldClose) {

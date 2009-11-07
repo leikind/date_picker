@@ -17,7 +17,7 @@ if defined?(DatePicker)
   DatePicker::ALLOW_ONLY_ONE_POPUP_CALENDAR = false
   DatePicker::MINUTE_STEP = 5
   
-  DatePicker::DEFAULT_ON_CHANGED_JS_CALLBACK =%!  new Effect.Highlight(calendar.dateField, {queue: 'end' })  !
+  DatePicker::DEFAULT_ON_CHANGED_JS_CALLBACK =%! calendar.viewOutputFields().each(function(f){new Effect.Highlight(f, {queue: 'end' })}) !
   DatePicker::DEFAULT_ON_HIDE_JS_CALLBACK = DatePicker::DEFAULT_ON_CHANGED_JS_CALLBACK
   
   DatePicker::LANGUAGE = 'en' # 'fr' or 'nl'

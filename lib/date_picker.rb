@@ -56,13 +56,13 @@ module DatePicker
                             date_format_hidden_field, date_view_id, with_time, 
                             on_hide, on_changed, prompt_id, initial_date, embedded, hide_on_click_on_day, update_outer_fields_on_init)
 
-      parent_or_trigger_definition = embedded ? 'parentElement' : 'triggerElement'
+      parent_or_trigger_definition = embedded ? 'embedAt' : 'popupTriggerElement'
 
       js =  %|<script type="text/javascript">\n|
       js << %|  document.observe('dom:loaded', function(){\n|
         
       if DatePicker.const_defined?('LANGUAGE') && ! @_date_picker_language_initialized
-        js << %|    Calendar.language = '#{DatePicker::LANGUAGE}';\n|
+        js << %|    Calendar.language = '#{I18n.locale || DatePicker::LANGUAGE}';\n|
         @_date_picker_language_initialized = true
       end
 
@@ -70,10 +70,12 @@ module DatePicker
       js << %|      #{parent_or_trigger_definition} : "#{popup_trigger_icon_id}",\n|
 
       if embedded
-        js << %|      dateField : "#{hidden_input_field_id}",\n|
+        # js << %|      dateField : "#{hidden_input_field_id}",\n|
+        js << %|      initialDate : $("#{hidden_input_field_id}").value,\n|
+        js << %|      outputFields : $A(["#{hidden_input_field_id}"]),\n |
       else
-        js << %|      dateField : "#{date_view_id}",\n|
-        js << %|      extraOutputDateFields : $A(["#{hidden_input_field_id}"]),\n |
+        js << %|      initialDate : $("#{date_view_id}").innerHTML,\n|
+        js << %|      outputFields : $A(["#{hidden_input_field_id}", "#{date_view_id}"]),\n |
       end
 
       if update_outer_fields_on_init
