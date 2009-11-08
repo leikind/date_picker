@@ -1,0 +1,21 @@
+
+== DatePicker
+
+Version:: 0.1
+Author::  Yuri Leikind
+Website:: http://leikind.org/pages/date-picker
+Email::   "Yuri Leikind" <yuri.leikind at gmail dot com>
+
+DatePicker is a drop-in replacement for Rails date and datetime helpers (object-style date_select and datetime_select, and tag helpers select_datetime and select_date). Once installed, all these helpers render a draggable popup Javascript calendar instead of dropdown boxes.
+
+Install:
+
+  script/plugin install  git://github.com/leikind/date_picker.git
+
+Copy the assets to public and the configuration file to <tt>config/initializers/</tt>:
+
+  ./script/generate  date_picker_assets
+
+Edit <tt>config/initializers/date_picker_config.rb</tt> to your taste. Restart the application.
+
+If you want an embedded calendar instead of a popup, add <tt>:embedded => true</tt> to you date helper options.
