@@ -16,6 +16,10 @@ Copy the assets to public and the configuration file to <tt>config/initializers/
 
   ./script/generate  date_picker_assets
 
+Make sure your pages load javascripts/calendarview.js, stylesheets/calendarview.css, 
+and stylesheets/calendarview_ie.css for IE browsers.
+
+
 Edit <tt>config/initializers/date_picker_config.rb</tt> to your taste. Restart the application.
 
 If you want an embedded calendar instead of a popup, add <tt>:embedded => true</tt> to you date helper options.
