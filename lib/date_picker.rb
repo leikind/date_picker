@@ -52,6 +52,14 @@ module DatePicker
       return date_picker
     end
 
+    def datepicker_locale
+      if Object.const_defined? :I18n
+        I18n.locale || DatePicker::LANGUAGE
+      else
+        DatePicker::LANGUAGE
+      end
+    end
+
     def calendar_constructor(popup_trigger_icon_id, hidden_input_field_id, date_format, 
                             date_format_hidden_field, date_view_id, with_time, 
                             on_hide, on_changed, prompt_id, initial_date, embedded, hide_on_click_on_day, update_outer_fields_on_init)
@@ -62,7 +70,7 @@ module DatePicker
       js << %|  document.observe('dom:loaded', function(){\n|
         
       if DatePicker.const_defined?('LANGUAGE') && ! @_date_picker_language_initialized
-        js << %|    Calendar.language = '#{I18n.locale || DatePicker::LANGUAGE}';\n|
+        js << %|    Calendar.language = '#{datepicker_locale}';\n|
         @_date_picker_language_initialized = true
       end
 
