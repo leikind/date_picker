@@ -107,10 +107,8 @@ var Calendar = Class.create({
     if (this.isPopup) { //Popup Calendars
       var popupTriggerElement = $(popupTriggerElement);
       popupTriggerElement._calendar = this;
-      
-      popupTriggerElement.onclick = function() {
-        this.showAtElement(popupTriggerElement);
-      }.bind(this);
+
+      popupTriggerElement.observe('click', this.showAtElement.bind(this) );
 
     } else{ // In-Page Calendar
       this.show();
@@ -457,12 +455,13 @@ var Calendar = Class.create({
     this.show();
   },
 
-  // Shows the Calendar at the coordinates of the provided element
-  showAtElement: function(element) {
-    var pos = Position.cumulativeOffset(element);
 
+
+  // Shows the Calendar at the coordinates of the provided element
+  showAtElement: function(e) {
     this.container.show();
-    this.showAt(pos[0], pos[1]  + (this.container.offsetHeight * 0.75));
+    var pos = Event.pointer(e);
+    this.showAt(pos.x + this.container.getWidth(), pos.y);
   },
 
   // Hides the Calendar
@@ -1212,5 +1211,4 @@ Date.prototype.__setFullYear = function(y) {
     this.setDate(28);
   this.setFullYear(y);
 };
-
 
