@@ -66,19 +66,19 @@ module DatePicker
 
       parent_or_trigger_definition = embedded ? 'embedAt' : 'popupTriggerElement'
 
-      js =  %|<script type="text/javascript">\n|
-      js << %|  document.observe('dom:loaded', function(){\n|
-        
+      js = %|<script type="text/javascript">\n|
+
       if DatePicker.const_defined?('LANGUAGE') && ! @_date_picker_language_initialized
         js << %|    Calendar.language = '#{datepicker_locale}';\n|
         @_date_picker_language_initialized = true
       end
 
+      js << %|  document.observe('dom:loaded', function(){\n|
+
       js << %|    new Calendar({\n|
       js << %|      #{parent_or_trigger_definition} : "#{popup_trigger_icon_id}",\n|
 
       if embedded
-        # js << %|      dateField : "#{hidden_input_field_id}",\n|
         js << %|      initialDate : $("#{hidden_input_field_id}").value,\n|
         js << %|      outputFields : $A(["#{hidden_input_field_id}"]),\n |
       else
