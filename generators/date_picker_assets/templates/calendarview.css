@@ -4,6 +4,7 @@ div.calendar
   font-size: smaller;
   color: #000;
   z-index: 5;
+  width: 217px;
 }
 
 div.calendar.popup
