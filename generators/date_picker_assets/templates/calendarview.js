@@ -18,7 +18,8 @@
 //
 
 
-/* This fork by Yuri Leikind ( git://github.com/leikind/calendarview.git ) adds the following features/changes:
+/* This fork by Yuri Leikind ( git://github.com/leikind/calendarview.git ) adds a number of features.
+
 
 The differences from the original are
 
@@ -28,29 +29,27 @@ The differences from the original are
 * Ability to unset the date by clicking on the active date
 * Simple I18n support
 * Removed all ambiguity in the API
+* Positioning of popup calendars is relative to the mouse pointer and can be configure
 * Popup calendars  are not created every time they pop up, on the contrary, they are created once just like
   embedded calendars, and then shown or hidden.
 * Possible to have many popup calendars on page. The behavior of the original calendarview when a popup
   calendar is hidden when the user clicks elsewhere on the page is an option now.
 * Refactoring and changes to the OO design like getting rid of Calendar.prototype in favor of class based
   OO provided by OO, and getting rid of Calendar.setup({}) in favor of a simple object constructor new Calendar({}).
+  
 
 */
 
 var Calendar = Class.create({
 
-  // The HTML Container Element
   container: null,
 
-  // Configuration
   minYear: 1900,
   maxYear: 2100,
 
-  // Dates
   date: new Date(),
   currentDateElement: null,
 
-  // Status
   shouldClose: false,
   isPopup: true,
 
@@ -71,6 +70,8 @@ var Calendar = Class.create({
     this.hideOnClickOnDay          = params.hideOnClickOnDay      || false;
     this.hideOnClickElsewhere      = params.hideOnClickElsewhere  || false;
     this.outputFields              = params.outputFields          || $A();
+    this.x = params.x || 0.5;
+    this.y = params.y || 0;
 
     this.outputFields = $A(this.outputFields).collect(function(f){
       return $(f);
@@ -119,9 +120,7 @@ var Calendar = Class.create({
     }
   },
 
-  // Build the DOM structure
   build: function(){
-    // If no parent was specified, assume that we are creating a popup calendar.
     if (this.embedAt) {
       var parentForCalendarTable = this.embedAt;
       this.isPopup = false;
@@ -131,16 +130,12 @@ var Calendar = Class.create({
     }
 
 
-    // Calendar Table
     var table = new Element('table');
 
-    // Calendar Header
     var thead = new Element('thead');
     table.appendChild(thead)
 
-    // Title Placeholder
     var firstRow  = new Element('tr');
-
 
     if (this.isPopup){
       var cell = new Element('td');
@@ -172,7 +167,6 @@ var Calendar = Class.create({
 
     thead.appendChild(firstRow);
 
-    // Calendar Navigation
     var row = new Element('tr')
     this._drawButtonCell(row, '&#x00ab;', 1, Calendar.NAV_PREVIOUS_YEAR);
     this._drawButtonCell(row, '&#x2039;', 1, Calendar.NAV_PREVIOUS_MONTH);
@@ -253,13 +247,10 @@ var Calendar = Class.create({
     }
     this.container.appendChild(table)
 
-    // Initialize Calendar
     this.update(this.date);
 
-    // Observe the container for mousedown events
-    Event.observe(this.container, 'mousedown', Calendar.handleMouseDownEvent)
+    Event.observe(this.container, 'mousedown', Calendar.handleMouseDownEvent);
 
-    // Append to parent element
     parentForCalendarTable.appendChild(this.container)
 
     if (this.isPopup){
@@ -423,15 +414,15 @@ var Calendar = Class.create({
 
 
   _drawButtonCell: function(parentForCell, text, colSpan, navAction) {
-    var cell          = new Element('td')
-    if (colSpan > 1) cell.colSpan = colSpan
-    cell.className    = 'cvbutton'
-    cell.calendar     = this
-    cell.navAction    = navAction
-    cell.innerHTML    = text
-    cell.unselectable = 'on' // IE
-    parentForCell.appendChild(cell)
-    return cell
+    var cell          = new Element('td');
+    if (colSpan > 1) cell.colSpan = colSpan;
+    cell.className    = 'cvbutton';
+    cell.calendar     = this;
+    cell.navAction    = navAction;
+    cell.innerHTML    = text;
+    cell.unselectable = 'on'; // IE
+    parentForCell.appendChild(cell);
+    return cell;
   },
 
 
@@ -461,7 +452,8 @@ var Calendar = Class.create({
   showAtElement: function(e) {
     this.container.show();
     var pos = Event.pointer(e);
-    this.showAt(pos.x + this.container.getWidth(), pos.y);
+    var containerWidth = this.container.getWidth();
+    this.showAt(pos.x + (containerWidth * this.x), pos.y + (containerWidth * this.y));
   },
 
   // Hides the Calendar
@@ -533,8 +525,6 @@ var Calendar = Class.create({
     console.log('date: ' + this.date);
     console.log('dateBackedUp: ' + this.dateBackedUp);
   },
-
-
 
 
   setRange: function(minYear, maxYear) {
