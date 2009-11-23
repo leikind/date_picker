@@ -1,8 +1,4 @@
 if defined?(DatePicker)
-  DatePicker::NIL_DATE_VIEW = ''
-  DatePicker::NIL_DATE_PROMPT = ''
-  # DatePicker::DATE_FORMAT = "%d-%B-%Y"
-  # DatePicker::DATETIME_FORMAT = "%d-%B-%Y-%H:%M"
   
   DatePicker::DATE_FORMAT = "%d %B %Y"
   DatePicker::DATETIME_FORMAT = "%d %B %Y %H:%M"
