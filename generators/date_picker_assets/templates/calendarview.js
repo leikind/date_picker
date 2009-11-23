@@ -70,7 +70,7 @@ var Calendar = Class.create({
     this.hideOnClickOnDay          = params.hideOnClickOnDay      || false;
     this.hideOnClickElsewhere      = params.hideOnClickElsewhere  || false;
     this.outputFields              = params.outputFields          || $A();
-    this.x = params.x || 0.5;
+    this.x = params.x || 0;
     this.y = params.y || 0;
 
     this.outputFields = $A(this.outputFields).collect(function(f){
