@@ -17,4 +17,7 @@ if defined?(DatePicker)
   DatePicker::DEFAULT_ON_HIDE_JS_CALLBACK = DatePicker::DEFAULT_ON_CHANGED_JS_CALLBACK
   
   DatePicker::LANGUAGE = 'en' # 'fr' or 'nl'
+  
+  # popup calendar will be shown relative to the popup trigger element or to the mouse pointer
+  DatePicker::POPUP_PLACEMENT_STRATEGY = :trigger # :pointer
 end

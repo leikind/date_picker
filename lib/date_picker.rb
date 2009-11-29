@@ -81,6 +81,12 @@ module DatePicker
         js << %|      updateOuterFieldsOnInit : true,\n|
       end
 
+      unless DatePicker::POPUP_PLACEMENT_STRATEGY == :trigger # :trigger is the default behavior 
+                                                              # of Calendarview so we'll save a few bytes
+                                                              # if POPUP_PLACEMENT_STRATEGY is :trigger
+        js << %|      popupPositioningStrategy : "#{DatePicker::POPUP_PLACEMENT_STRATEGY}",\n|
+      end
+
       js << %|       hideOnClickOnDay :  #{hide_on_click_on_day.inspect},\n | unless embedded
 
       js << %|      dateFormat : "#{date_format}",\n|
