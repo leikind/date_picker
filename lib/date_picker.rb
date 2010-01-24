@@ -1,6 +1,7 @@
 module DatePicker
 
-    def select_date_datetime_common(opts, initial_date, with_time, date_format, date_format_hidden_field)
+    def select_date_datetime_common(opts, initial_date, with_time, 
+                                    date_format, date_format_hidden_field)
       options = {
         :embedded => EMBEDDED_CALENDAR,
         :hide_on_click_on_day => HIDE_ON_CLICK_ON_DAY
@@ -38,7 +39,7 @@ module DatePicker
       date_picker << calendar_constructor(
         popup_trigger_icon_id, hidden_input_field_id, date_format, date_format_hidden_field, date_view_id,
         with_time.to_s, options[:on_hide], options[:on_changed], initial_date,
-        options[:embedded], options[:hide_on_click_on_day], (initial_date.nil? ? false : true) )
+        options[:embedded], options[:hide_on_click_on_day], (initial_date.nil? ? false : true), opts[:wrap_in_dom_loaded])
 
       return date_picker
     end
@@ -51,9 +52,10 @@ module DatePicker
       end
     end
 
-    def calendar_constructor(popup_trigger_icon_id, hidden_input_field_id, date_format,
-                            date_format_hidden_field, date_view_id, with_time,
-                            on_hide, on_changed, initial_date, embedded, hide_on_click_on_day, update_outer_fields_on_init)
+    def calendar_constructor(popup_trigger_icon_id, hidden_input_field_id, date_format, 
+                            date_format_hidden_field, date_view_id, with_time, 
+                            on_hide, on_changed, initial_date, embedded, 
+                            hide_on_click_on_day, update_outer_fields_on_init, wrap_in_dom_loaded)
 
       parent_or_trigger_definition = embedded ? 'embedAt' : 'popupTriggerElement'
 
@@ -64,7 +66,7 @@ module DatePicker
         @_date_picker_language_initialized = true
       end
 
-      js << %|  document.observe('dom:loaded', function(){\n|
+      js << %|  document.observe('dom:loaded', function(){\n| if wrap_in_dom_loaded
 
       js << %|    new Calendar({\n|
       js << %|      #{parent_or_trigger_definition} : "#{popup_trigger_icon_id}",\n|
@@ -98,7 +100,7 @@ module DatePicker
       js << %|      withTime : #{with_time}\n|
       js << %|    });\n|
 
-      js << %|  });\n|
+      js << %|  });\n| if wrap_in_dom_loaded
       js << %|</script>\n|
 
       js
@@ -130,17 +132,23 @@ module DatePicker
     def object_style_to_tag_style(object_name, method, options = {})
       name = options[:name].nil? ? "#{object_name}[#{method}]" : options[:name]
       id = options[:id].nil? ? "#{object_name}_#{method}" : options[:id]
-      it = ::ActionView::Helpers::InstanceTag.new(object_name, method, self, options.delete(:object))
-      if it.object.nil? # Well, Rails helpers don't throw exceptions in this case, at least FormHelper helpers
-        return [nil, nil]
+      
+      initial_date = if options[:object]
+        options[:object].send(method)
+      else
+        it = ::ActionView::Helpers::InstanceTag.new(object_name, method, self, options.delete(:object))
+        if it.object.nil? # Well, Rails helpers don't throw exceptions in this case, at least FormHelper helpers
+          return [nil, nil]
+        end
+        it.object.send(method)
       end
-      initial_date = it.object.send(method)
 
       opts = {:prefix => name,
        :id => id,
        :on_changed => options[:on_changed],
        :on_hide => options[:on_hide],
-       :default => options[:default]
+       :default => options[:default],
+       :wrap_in_dom_loaded => (options.has_key?(:wrap_in_dom_loaded) ? options[:wrap_in_dom_loaded] : true)
       }
       opts[:embedded] = options[:embedded] if options.has_key?(:embedded)
       opts[:hide_on_click_on_day] = options[:hide_on_click_on_day] if options.has_key?(:hide_on_click_on_day)
