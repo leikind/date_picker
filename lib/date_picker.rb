@@ -106,7 +106,8 @@ module DatePicker
       js
     end
 
-    def opt_process(opts)
+    def opt_process(opts, html_opts)
+      opts[:id] = html_opts[:id] if html_opts[:id]
       options = {:prefix => 'date', :on_hide => DEFAULT_ON_HIDE_JS_CALLBACK, :on_changed => DEFAULT_ON_CHANGED_JS_CALLBACK}
       opts.delete(:on_hide) if opts[:on_hide].blank?
       opts.delete(:on_changed) if opts[:on_changed].blank?
@@ -117,22 +118,11 @@ module DatePicker
 
     private :select_date_datetime_common, :calendar_constructor, :opt_process
 
-    # Rails simple tag style view helpers
-    def select_date(initial_date, opts = {}, html_opts = {})
-      options = opt_process(opts)
-      select_date_datetime_common(options, initial_date, false, DATE_FORMAT, DATE_FORMAT_HIDDEN_FIELD)
-    end
-
-    def select_datetime(initial_date, opts = {}, html_opts = {})
-      options = opt_process(opts)
-      select_date_datetime_common(options, initial_date, true, DATETIME_FORMAT, DATETIME_FORMAT_HIDDEN_FIELD)
-    end
-
 
     def object_style_to_tag_style(object_name, method, options = {})
       name = options[:name].nil? ? "#{object_name}[#{method}]" : options[:name]
       id = options[:id].nil? ? "#{object_name}_#{method}" : options[:id]
-      
+    
       initial_date = if options[:object]
         options[:object].send(method)
       else
@@ -162,7 +152,7 @@ module DatePicker
       if opts.nil?
         ''
       else
-        select_date(initial_date, opts)
+        select_date(initial_date, opts, html_options)
       end
     end
 
@@ -171,7 +161,18 @@ module DatePicker
       if opts.nil?
         ''
       else
-        select_datetime(initial_date, opts)
+        select_datetime(initial_date, opts, html_options)
       end
+    end
+  
+    # Rails simple tag style view helpers
+    def select_date(initial_date, opts = {}, html_opts = {})
+      options = opt_process(opts, html_opts)
+      select_date_datetime_common(options, initial_date, false, DATE_FORMAT, DATE_FORMAT_HIDDEN_FIELD)
+    end
+
+    def select_datetime(initial_date, opts = {}, html_opts = {})
+      options = opt_process(opts, html_opts)
+      select_date_datetime_common(options, initial_date, true, DATETIME_FORMAT, DATETIME_FORMAT_HIDDEN_FIELD)
     end
 end
