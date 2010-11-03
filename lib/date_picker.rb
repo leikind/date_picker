@@ -8,7 +8,7 @@ module DatePicker
     }
     options.merge!(opts)
     initial_date ||= options[:default]
-
+    initial_date =  initial_date.call if initial_date.is_a?(Proc)
     date_string = initial_date.nil? ? '' : initial_date.strftime(date_format_hidden_field)
 
     name = options[:prefix]
